@@ -7,10 +7,7 @@ output:
   html_document: default
 ---
 
-## Introduction and background
-
 ## Prepare
-
 ```{r Install and load R packages}
 library(tidyverse)
 library(ggplot2)
@@ -36,7 +33,6 @@ nov22 <- read_csv("202211-divvy-tripdata.csv")
 dec22 <- read_csv("202212-divvy-tripdata.csv")
 ```
 
-### checking data frames for consistency
 ```{r Cheaking column names}
 colnames(jan22)
 colnames(feb22)
@@ -51,8 +47,8 @@ colnames(oct22)
 colnames(nov22)
 colnames(dec22)
 ```
-### Checking data frames structures and data type (dbl, chr, date)
-```{r}
+
+```{r Checking data frames structures and data type (dbl, chr, date)}
 str(jan22)
 str(feb22)
 str(mar22)
@@ -67,14 +63,13 @@ str(nov22)
 str(dec22)
 ```
 
-### Stack individual data frames into one big data frame
-```{r}
+```{r Stack individual data frames into one big data frame}
 tripdata <- bind_rows(jan22, feb22, mar22, apr22, may22, jun22, jul22, aug22, sep22, oct22, nov22, dec22)
 ```
 
+
 ## Process
-### Checking new data frame structure
-```{r}
+```{r Checking new data frame structure}
 colnames(tripdata)  #List of column names
 head(tripdata)  #See the first 6 rows of data frame.
 str(tripdata)  #See list of columns and data types (numeric, character, etc)
@@ -87,7 +82,6 @@ summary(tripdata)  #Statistical summary of data.
 unique_member <- unique(tripdata$member_casual)
 unique_biketype <- unique(tripdata$rideable_type)
 ```
-
 
 ```{r Adding date, month, year, day of week columns}
 tripdata <- tripdata %>% 
@@ -108,6 +102,7 @@ is.numeric(tripdata$ride_length) # to check it is right format
 ```{r remove bad data }
 tripdata_clean <- tripdata [!(tripdata$ride_length <= 0),]
 ```
+
 
 ## Analyze
 ```{r checking the cleaned data frame}
@@ -134,8 +129,8 @@ tripdata_clean %>%
             min_length = min(ride_length))
 
 ```
-### Compare members and casual users
 
+### Compare members and casual users
 ```{r members vs casual riders difference: ride counts}
 tripdata_clean %>% 
   group_by(member_casual) %>% 
@@ -223,17 +218,7 @@ ggplot(tripdata_clean, aes(x = rideable_type, fill = member_casual)) +
 
 
 ```{r Export data frame into csv file}
-write.csv(tripdata_clean, "/Users/claireb/Desktop/bikeshare_records_202201-202212/tripdata_clean.csv", row.names=FALSE)
+write.csv(tripdata_clean, "/Users/.../bikeshare_records_202201-202212/tripdata_clean.csv", row.names=FALSE)
 ```
-
-
-
-
-
-
-
-
-
-
 
 
