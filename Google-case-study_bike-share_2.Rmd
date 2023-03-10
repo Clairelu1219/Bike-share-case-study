@@ -1,0 +1,239 @@
+---
+title: "Google Data Analytics Project_Bike-Share"
+author: "Yan-Rong Bilodeau"
+date: "2023-03-09"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Introduction and background
+
+## Prepare
+
+```{r Install and load R packages}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(janitor)
+library(readr)
+library(tidyr)
+```
+
+```{r Loading csv files}
+setwd("/Users/claireb/Desktop/bikeshare_records_202201-202212")
+jan22 <- read_csv("202201-divvy-tripdata.csv")
+feb22 <- read_csv("202202-divvy-tripdata.csv")
+mar22 <- read_csv("202203-divvy-tripdata.csv")
+apr22 <- read_csv("202204-divvy-tripdata.csv")
+may22 <- read_csv("202205-divvy-tripdata.csv")
+jun22 <- read_csv("202206-divvy-tripdata.csv")
+jul22 <- read_csv("202207-divvy-tripdata.csv")
+aug22 <- read_csv("202208-divvy-tripdata.csv")
+sep22 <- read_csv("202209-divvy-publictripdata.csv")
+oct22 <- read_csv("202210-divvy-tripdata.csv")
+nov22 <- read_csv("202211-divvy-tripdata.csv")
+dec22 <- read_csv("202212-divvy-tripdata.csv")
+```
+
+### checking data frames for consistency
+```{r Cheaking column names}
+colnames(jan22)
+colnames(feb22)
+colnames(mar22)
+colnames(apr22)
+colnames(may22)
+colnames(jun22)
+colnames(jul22)
+colnames(aug22)
+colnames(sep22)
+colnames(oct22)
+colnames(nov22)
+colnames(dec22)
+```
+### Checking data frames structures and data type (dbl, chr, date)
+```{r}
+str(jan22)
+str(feb22)
+str(mar22)
+str(apr22)
+str(may22)
+str(jun22)
+str(jul22)
+str(aug22)
+str(sep22)
+str(oct22)
+str(nov22)
+str(dec22)
+```
+
+### Stack individual data frames into one big data frame
+```{r}
+tripdata <- bind_rows(jan22, feb22, mar22, apr22, may22, jun22, jul22, aug22, sep22, oct22, nov22, dec22)
+```
+
+## Process
+### Checking new data frame structure
+```{r}
+colnames(tripdata)  #List of column names
+head(tripdata)  #See the first 6 rows of data frame.
+str(tripdata)  #See list of columns and data types (numeric, character, etc)
+nrow(tripdata)  #How many rows are in data frame?
+dim(tripdata)  #Dimensions of the data frame?
+summary(tripdata)  #Statistical summary of data.
+```
+
+```{r Checking values for  columns member_casual & rideable_type}
+unique_member <- unique(tripdata$member_casual)
+unique_biketype <- unique(tripdata$rideable_type)
+```
+
+
+```{r Adding date, month, year, day of week columns}
+tripdata <- tripdata %>% 
+  mutate(year = format(as.Date(started_at), "%Y")) %>% # extract year
+  mutate(month = format(as.Date(started_at), "%B")) %>% # extract month
+  mutate(date = format(as.Date(started_at), "%d")) %>% # extract date
+  mutate(day_of_week = format(as.Date(started_at), "%A")) %>% # extract day of week
+  mutate(ride_length = difftime(ended_at, started_at)) %>% 
+  mutate(start_time = format(as.POSIXct(started_at), "%H"))
+
+# converting 'ride_length' to numeric for calculation on data
+tripdata <- tripdata %>% 
+  mutate(ride_length = as.numeric(ride_length))
+is.numeric(tripdata$ride_length) # to check it is right format
+```
+
+
+```{r remove bad data }
+tripdata_clean <- tripdata [!(tripdata$ride_length <= 0),]
+```
+
+## Analyze
+```{r checking the cleaned data frame}
+str(tripdata_clean)
+```
+
+```{r checking the summary details of new data frame}
+summary(tripdata_clean)
+```
+
+```{r descriptive analysis (mean, median, max, min)}
+tripdata_clean %>% 
+  summarise(average_length = mean(ride_length), 
+            median_length = median(ride_length), 
+            max_length = max(ride_length), 
+            min_length = min(ride_length))
+
+## Descriptive analysis for 'member' and 'casual' (mean, median, max, min)
+tripdata_clean %>% 
+  group_by(member_casual) %>%
+  summarise(average_length = mean(ride_length), 
+            median_length = median(ride_length), 
+            max_length = max(ride_length), 
+            min_length = min(ride_length))
+
+```
+### Compare members and casual users
+
+```{r members vs casual riders difference: ride counts}
+tripdata_clean %>% 
+  group_by(member_casual) %>% 
+  summarise(ride_count = length(ride_id), ride_percentage = (length(ride_id) / nrow(tripdata_clean)) * 100)
+
+ggplot(tripdata_clean, aes(x = member_casual, fill=member_casual)) +
+    geom_bar() +
+    labs(x="Casuals/Members", y="Rides Number", title= "Casuals vs Members Ride Counts")
+```
+
+```{r See the average ride time by day_off_week for members vs casual users}
+tripdata_clean %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% #creates weekday field using wday()
+  group_by(member_casual, weekday) %>% #groups by member type and weekday
+  summarise(number_of_rides = n(),#calculates the number of rides and average duration 
+            average_duration = mean(ride_length),# calculates the average duration
+            .groups = "drop") %>%  # add .groups argument to drop grouping
+  arrange(member_casual, weekday) # sorts
+```
+
+```{r Analyze number of rides data by member type and weekday}
+tripdata_clean %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length),.groups = "drop") %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Total Rides by Members & Casual on Each Day of Week", x = "Day of Week", y= "Number Of Rides")
+```
+
+```{r Analyze average duration data by member type and weekday}
+tripdata_clean %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length),.groups = "drop") %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge")+
+  labs(title = "Average Duration of Members & Casual on Each Day of Week", x = "Day of Week", y= "Average Duration")
+```
+
+```{r Analyze number of rides data by member type and month}
+tripdata_clean$month <- ordered(tripdata_clean$month, levels=c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
+
+tripdata_clean %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length),.groups = "drop") %>% 
+  arrange(member_casual, month)  %>% 
+  ggplot(aes(x = month, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Total Rides by Members & Casual by Month", x = "Month", y= "Number Of Rides")+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+```{r}
+tripdata_clean %>% 
+  group_by(member_casual, month) %>% 
+  summarise(average_ride_length = mean(ride_length),.groups="drop") %>% 
+  ggplot(aes(x = month, y = average_ride_length, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Total Rides Time by Members & Casual by Month", x = "Month", y= "Rides Time")+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+```{r}
+tripdata_clean %>%
+    ggplot(aes(start_time, fill=member_casual)) +
+    geom_bar() +
+    labs(x="Hour of the day", title="Bike Usage per Hour by Day of the Week") +
+    facet_wrap(~ day_of_week)
+```
+
+
+
+```{r bike types usage by members & casual}
+tripdata_clean %>% 
+  group_by(rideable_type) %>% 
+  summarise(count = length(ride_id))
+
+ggplot(tripdata_clean, aes(x = rideable_type, fill = member_casual)) +
+    geom_bar()+
+  labs(title="Rideable type vs Total Rides by Members and Casual Riders", x="Rideable Type",y= "Rides Counts")
+```
+
+
+```{r Export data frame into csv file}
+write.csv(tripdata_clean, "/Users/claireb/Desktop/bikeshare_records_202201-202212/tripdata_clean.csv", row.names=FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
