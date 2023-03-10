@@ -2,7 +2,7 @@
 
 ### Introduction
 This is my Google Data Analytics Professional Certificate course case study project.
-<br>🛠️ Analysis tool: R programming language(RStudio) to do statistical analysisand data visualizations.</br>
+<br>🛠️ Analysis tool: R programming language(RStudio) to do statistical analysis and data visualizations.</br>
 
 ### Scenario
 You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago.
